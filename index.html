@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zenith Task Tracker</title>
+    <link rel="icon" type="image/png" href="https://placehold.co/32x32/000000/FFFFFF?text=ZT" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <!-- Babel for in-browser JSX/ESNext transformation. data-type="module" is crucial for imports. -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="stylesheet" href="index.css">
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <!-- IndexedDB Utility Functions -->
+    <script type="module" src="src/utils/indexedDb.js"></script>
+    <!-- Theme Utility Functions -->
+    <script type="module" src="src/utils/theme.js"></script>
+    <!-- Date Helper Functions -->
+    <script type="module" src="src/utils/dateHelpers.js"></script>
+    <!-- Icon Components -->
+    <script type="module" src="src/components/icons.js"></script>
+    <!-- Common UI Components -->
+    <script type="module" src="src/components/common.js"></script>
+    <!-- Widget Components -->
+    <script type="module" src="src/components/widgets.js"></script>
+    <!-- Modal Components -->
+    <script type="module" src="src/components/modals.js"></script>
+    
+    <!-- Main App Component - Processed by Babel -->
+    <script type="text/babel" data-type="module">
+      // Import React hooks
+      const { StrictMode, useState, useEffect, useCallback, useRef } = React;
+
+      // Import modules from external files
+      import { initDB, getData, putData, deleteData, clearStore, exportAllData, importAllData } from './src/utils/indexedDb.js';
+      import { getTheme, saveTheme, toggleTheme } from './src/utils/theme.js';
+      import { getToday, getWeekNumber, getMonth, isMonday, isFirstOfMonth } from './src/utils/dateHelpers.js';
+      import { StarIcon, SunIcon, WeekIcon, MoonIcon, FireIcon, NoteIcon, LinkIcon, TextIcon, PlusIcon, DataIcon, ExportIcon, ImportIcon, ResetIcon, LightbulbIcon, MoonStarsIcon } from './src/components/icons.js';
+      import { Widget, ProgressBar, Modal } from './src/components/common.js';
+      import { TaskWidget, CalendarWidget, NotesWidget, StreakWidget, CountdownWidget } from './src/components/widgets.js';
+      import { RenderModals } from './src/components/modals.js';
+
+      // --- Enums from types.ts ---
+      const TaskPeriod = {
+        Day: 'day',
+        Week: 'week',
+        Month: 'month',
+      };
+
+      // --- IndexedDB Keys (simulating "file names" in appSettings store) ---
+      const IDB_KEYS = {
+          DAY_TASKS: 'day_tasks',
+          WEEK_TASKS: 'week_tasks',
+          MONTH_TASKS: 'month_tasks',
+          NOTES: 'notes',
+          TARGET_DATES: 'target_dates',
+          STARS_DATA: 'stars_data',
+          STREAK: 'streak',
+          THEME: 'theme'
+      };
+
+      // --- Custom Hook for IndexedDB State Management ---
+      const useIndexedDBState = (key, initialValue) => {
+        const [storedValue, setStoredValue] = useState(initialValue);
+        const [isLoaded, setIsLoaded] = useState(false);
+
+        // Load data on component mount
+        useEffect(() => {
+          const loadData = async () => {
+            try {
+              const data = await getData(key);
+              if (data !== undefined) {
+                setStoredValue(data);
+              } else {
+                // If no data in DB, save initial value
+                await putData(key, initialValue);
+              }
+            } catch (error) {
+              console.error(`Error loading data for ${key} from IndexedDB:`, error);
+            } finally {
+              setIsLoaded(true);
+            }
+          };
+          loadData();
+        }, [key]); // Re-run if key changes (unlikely for app-level state)
+
+        // Update data in IndexedDB when state changes
+        const setValue = useCallback(async (value) => {
+          try {
+            const valueToStore = value instanceof Function ? value(storedValue) : value;
+            setStoredValue(valueToStore);
+            await putData(key, valueToStore);
+          } catch (error) {
+            console.error(`Error saving data for ${key} to IndexedDB:`, error);
+          }
+        }, [key, storedValue]);
+
+        return [storedValue, setValue, isLoaded];
+      };
+
+      // --- Main App Component ---
+      function App() {
+        // Initialize IndexedDB on app start
+        useEffect(() => {
+            initDB().catch(error => console.error("Failed to initialize IndexedDB:", error));
+        }, []);
+
+        // State variables using the custom IndexedDB hook
+        const [dayTasks, setDayTasks, isDayTasksLoaded] = useIndexedDBState(IDB_KEYS.DAY_TASKS, []);
+        const [weekTasks, setWeekTasks, isWeekTasksLoaded] = useIndexedDBState(IDB_KEYS.WEEK_TASKS, []);
+        const [monthTasks, setMonthTasks, isMonthTasksLoaded] = useIndexedDBState(IDB_KEYS.MONTH_TASKS, []);
+        const [notes, setNotes, isNotesLoaded] = useIndexedDBState(IDB_KEYS.NOTES, []);
+        const [targets, setTargets, isTargetsLoaded] = useIndexedDBState(IDB_KEYS.TARGET_DATES, []);
+        const [starsData, setStarsData, isStarsDataLoaded] = useIndexedDBState(IDB_KEYS.STARS_DATA, {
+            stars: { daily: 0, weekly: 0, monthly: 0 },
+            dailyResetDate: '', weeklyResetWeek: '', monthlyResetMonth: '',
+            totalEarned: 0, totalTasks: 0
+        });
+        const [streak, setStreak, isStreakLoaded] = useIndexedDBState(IDB_KEYS.STREAK, { current: 0, starsThisWeek: 0, lastUpdate: '' });
+        const [theme, setThemeState, isThemeLoaded] = useIndexedDBState(IDB_KEYS.THEME, 'dark');
+
+        const [modal, setModal] = useState(null);
+        const [modalData, setModalData] = useState(null);
+        
+        const fileInputRef = useRef(null);
+        const currentDate = new Date();
+
+        // Apply theme from state to HTML
+        useEffect(() => {
+            if (isThemeLoaded) {
+                document.documentElement.setAttribute('data-theme', theme);
+            }
+        }, [theme, isThemeLoaded]);
+
+        // Toggle theme and save to IndexedDB
+        const handleThemeToggle = useCallback(() => {
+            const newTheme = theme === 'dark' ? 'light' : 'dark';
+            setThemeState(newTheme);
+            saveTheme(newTheme); // Also save to IndexedDB via the utility function
+        }, [theme, setThemeState]);
+
+        // Handle daily/weekly/monthly resets and streak calculation
+        const handleResetsAndStreak = useCallback(async () => {
+          if (!isDayTasksLoaded || !isWeekTasksLoaded || !isMonthTasksLoaded || !isStarsDataLoaded || !isStreakLoaded) {
+              return; // Wait until all data is loaded from IndexedDB
+          }
+
+          const todayStr = getToday();
+          const currentWeek = getWeekNumber(currentDate);
+          const currentMonth = getMonth();
+
+          let newStarsData = { ...starsData };
+          let newStreak = { ...streak };
+
+          // Daily Reset Logic
+          if (newStarsData.dailyResetDate !== todayStr) {
+            // Check for streak update based on previous day's completion
+            if (streak.lastUpdate && streak.lastUpdate !== todayStr) {
+                // Fetch previous day's tasks to check completion
+                const prevDayTasks = await getData(IDB_KEYS.DAY_TASKS) || [];
+                const allDayTasksCompleted = prevDayTasks.length > 0 && prevDayTasks.every(t => t.completed);
+                if (allDayTasksCompleted) {
+                    newStreak.current += 1;
+                    newStreak.starsThisWeek = Math.min(7, newStreak.starsThisWeek + 1);
+                } else if(prevDayTasks.length > 0) { // If there were tasks but not all completed
+                    newStreak.current = 0;
+                }
+            }
+            newStreak.lastUpdate = todayStr;
+            newStarsData.stars.daily = 0;
+            newStarsData.dailyResetDate = todayStr;
+            await clearStore(IDB_KEYS.DAY_TASKS); // Clear daily tasks in DB
+            setDayTasks([]); // Update state
+          }
+          
+          // Weekly Reset Logic (on Monday)
+          if (newStarsData.weeklyResetWeek !== currentWeek && isMonday()) {
+              newStarsData.stars.weekly = 0;
+              newStarsData.weeklyResetWeek = currentWeek;
+              newStreak.starsThisWeek = 0;
+              await clearStore(IDB_KEYS.WEEK_TASKS); // Clear weekly tasks in DB
+              setWeekTasks([]); // Update state
+          }
+
+          // Monthly Reset Logic (on 1st of month)
+          if (newStarsData.monthlyResetMonth !== currentMonth && isFirstOfMonth()) {
+              newStarsData.stars.monthly = 0;
+              newStarsData.monthlyResetMonth = currentMonth;
+              await clearStore(IDB_KEYS.MONTH_TASKS); // Clear monthly tasks in DB
+              setMonthTasks([]); // Update state
+          }
+          
+          setStarsData(newStarsData);
+          setStreak(newStreak);
+        }, [
+            starsData, streak, dayTasks,
+            isDayTasksLoaded, isWeekTasksLoaded, isMonthTasksLoaded, isStarsDataLoaded, isStreakLoaded,
+            setDayTasks, setWeekTasks, setMonthTasks, setStarsData, setStreak
+        ]);
+
+        // Run resets and streak logic once all data is loaded
+        useEffect(() => {
+            if (isDayTasksLoaded && isWeekTasksLoaded && isMonthTasksLoaded && isStarsDataLoaded && isStreakLoaded) {
+                handleResetsAndStreak();
+            }
+        }, [isDayTasksLoaded, isWeekTasksLoaded, isMonthTasksLoaded, isStarsDataLoaded, isStreakLoaded, handleResetsAndStreak]);
+
+
+        const openModal = (type, data = null) => {
+          setModalData(data);
+          setModal(type);
+        };
+        
+        const closeModal = () => {
+          setModal(null);
+          setModalData(null);
+        };
+
+        const addTask = async (period, text) => {
+          if (!text.trim()) return;
+          const newTask = { id: crypto.randomUUID(), text: text.trim(), completed: false, period: period }; // Store period for easier retrieval
+          
+          const taskSetter = {
+            [TaskPeriod.Day]: setDayTasks,
+            [TaskPeriod.Week]: setWeekTasks,
+            [TaskPeriod.Month]: setMonthTasks,
+          }[period];
+
+          taskSetter(prev => [...prev, newTask]);
+          // Store individual task in IndexedDB's tasks store
+          await putData(IDB_KEYS.TASKS, newTask, 'tasks'); 
+          setStarsData(prev => ({...prev, totalTasks: prev.totalTasks + 1}));
+          closeModal();
+        };
+
+        const removeTask = async (period, id) => {
+          const taskSetter = {
+            [TaskPeriod.Day]: setDayTasks,
+            [TaskPeriod.Week]: setWeekTasks,
+            [TaskPeriod.Month]: setMonthTasks,
+          }[period];
+          taskSetter(prev => prev.filter(t => t.id !== id));
+          await deleteData(id, 'tasks'); // Remove from IndexedDB's tasks store
+          setStarsData(prev => ({...prev, totalTasks: Math.max(0, prev.totalTasks - 1)}));
+          closeModal();
+        };
+
+        const completeTask = async (period, id) => {
+          const taskSetter = {
+            [TaskPeriod.Day]: setDayTasks,
+            [TaskPeriod.Week]: setWeekTasks,
+            [TaskPeriod.Month]: setMonthTasks,
+          }[period];
+          taskSetter(prev => prev.map(t => t.id === id ? {...t, completed: true} : t));
+          // Update task in IndexedDB's tasks store
+          const taskToUpdate = await getData(id, 'tasks');
+          if (taskToUpdate) {
+              await putData(IDB_KEYS.TASKS, {...taskToUpdate, completed: true}, 'tasks');
+          }
+          setStarsData(prev => ({
+            ...prev,
+            stars: { ...prev.stars, [period]: prev.stars[period] + 1 },
+            totalEarned: prev.totalEarned + 1
+          }));
+          closeModal();
+        };
+
+        const addNote = async (type, content) => {
+          if (!content.trim()) return;
+          if (type === 'link' && !/^https?:\/\//.test(content)) {
+              // Using a custom message box instead of alert()
+              openModal('message', { title: 'Invalid URL', message: 'Link must start with http:// or https://' });
+              return;
+          }
+          const newNote = { id: crypto.randomUUID(), type, content: content.trim() };
+          setNotes(prev => [newNote, ...prev]);
+          await putData(IDB_KEYS.NOTES, newNote, 'notes'); // Save to IndexedDB's notes store
+          closeModal();
+        };
+        
+        const editNote = async (id, newContent) => {
+          setNotes(prev => prev.map(n => n.id === id ? {...n, content: newContent} : n));
+          await putData(IDB_KEYS.NOTES, {...modalData.note, content: newContent}, 'notes'); // Update in IndexedDB's notes store
+          closeModal();
+        };
+
+        const deleteNote = async (id) => {
+          setNotes(prev => prev.filter(n => n.id !== id));
+          await deleteData(id, 'notes'); // Remove from IndexedDB's notes store
+          closeModal();
+        };
+
+        const addTarget = async (label, date) => {
+          if (!label.trim() || !date) return;
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(new Date(date).getTime())) {
+              openModal('message', { title: 'Invalid Date', message: 'Invalid date format. Please use YYYY-MM-DD.' });
+              return;
+          }
+          const newTarget = { id: crypto.randomUUID(), label, date, startDate: getToday() };
+          setTargets(prev => [...prev, newTarget]);
+          await putData(IDB_KEYS.TARGET_DATES, newTarget, 'targets'); // Save to IndexedDB's targets store
+        };
+
+        const deleteTarget = async (id) => {
+          setTargets(prev => prev.filter(t => t.id !== id));
+          await deleteData(id, 'targets'); // Remove from IndexedDB's targets store
+        };
+
+        const handleExport = async () => {
+          try {
+              const data = await exportAllData();
+              const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`;
+              const link = document.createElement('a');
+              link.href = jsonString;
+              link.download = `zenith-task-tracker-backup-${getToday()}.json`;
+              link.click();
+              closeModal();
+          } catch (error) {
+              console.error("Failed to export data:", error);
+              openModal('message', { title: 'Export Failed', message: `An error occurred during export: ${error.message}` });
+          }
+        };
+
+        const handleImport = async (event) => {
+            const file = event.target.files[0];
+            event.target.value = null; // Reset to allow re-importing same file
+            if (!file) return;
+            
+            closeModal(); // Close the modal before confirmation
+
+            setTimeout(() => {
+                // Using a custom confirmation modal instead of window.confirm()
+                openModal('confirm', {
+                    title: 'Confirm Import',
+                    message: 'Are you sure you want to import data? This will overwrite all current data and the page will reload.',
+                    onConfirm: async () => {
+                        const reader = new FileReader();
+                        reader.onload = async (e) => {
+                            try {
+                                const text = e.target.result;
+                                const data = JSON.parse(text);
+
+                                if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+                                    throw new Error("Backup file is not in a valid format.");
+                                }
+                                
+                                // Import data into IndexedDB
+                                await importAllData(data);
+                                
+                                openModal('message', { 
+                                    title: 'Import Successful', 
+                                    message: 'Data imported successfully! The page will now reload.',
+                                    onClose: () => window.location.reload() // Reload after user acknowledges
+                                });
+
+                            } catch (error) {
+                                console.error("Failed to import data:", error);
+                                openModal('message', { title: 'Import Failed', message: `Import failed: ${error.message}. Please check the file format.` });
+                            }
+                        };
+                        reader.onerror = () => {
+                            openModal('message', { title: 'File Read Error', message: 'An error occurred while reading the file.' });
+                        };
+                        reader.readAsText(file);
+                    },
+                    onCancel: () => {} // Do nothing on cancel
+                });
+            }, 50); // Small delay to improve UX
+        };
+        
+        const triggerImport = () => {
+            fileInputRef.current?.click();
+        };
+
+        const handleReset = () => {
+            openModal('confirm', {
+                title: 'Confirm Reset',
+                message: 'Are you sure you want to reset ALL data? This cannot be undone.',
+                onConfirm: async () => {
+                    try {
+                        await clearStore(IDB_KEYS.DAY_TASKS);
+                        await clearStore(IDB_KEYS.WEEK_TASKS);
+                        await clearStore(IDB_KEYS.MONTH_TASKS);
+                        await clearStore(IDB_KEYS.NOTES);
+                        await clearStore(IDB_KEYS.TARGET_DATES);
+                        await clearStore(IDB_KEYS.STARS_DATA);
+                        await clearStore(IDB_KEYS.STREAK);
+                        await clearStore(IDB_KEYS.THEME); // Clear theme too
+                        openModal('message', {
+                            title: 'Data Reset',
+                            message: 'All data has been reset! The page will now reload.',
+                            onClose: () => window.location.reload()
+                        });
+                    } catch (error) {
+                        console.error("Failed to reset data:", error);
+                        openModal('message', { title: 'Reset Failed', message: `An error occurred during reset: ${error.message}` });
+                    }
+                },
+                onCancel: () => {}
+            });
+        };
+
+        // Show loading state until all data is loaded from IndexedDB
+        if (!isDayTasksLoaded || !isWeekTasksLoaded || !isMonthTasksLoaded || !isNotesLoaded || !isTargetsLoaded || !isStarsDataLoaded || !isStreakLoaded || !isThemeLoaded) {
+            return (
+                <div className="min-h-screen flex items-center justify-center bg-background text-text-primary">
+                    <div className="text-xl animate-pulse">Loading your data...</div>
+                </div>
+            );
+        }
+
+        return (
+          <div className="min-h-screen p-2 sm:p-4 lg:p-6 space-y-4 max-w-7xl mx-auto bg-background text-text-primary">
+              <input type="file" ref={fileInputRef} onChange={handleImport} className="hidden" accept=".json,text/json"/>
+              {/* Header Area */}
+              <div className="flex justify-between items-start gap-4">
+                  <Widget className="w-full">
+                      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-md font-mono text-text-secondary">
+                          <span className="flex items-center gap-2 text-accent-star"><StarIcon/>EARNED:</span>
+                          <span className="flex items-center gap-1"><SunIcon/>Day: {starsData.stars.daily}</span>
+                          <span className="text-border-color">|</span>
+                          <span className="flex items-center gap-1"><WeekIcon/>Week: {starsData.stars.weekly}</span>
+                          <span className="text-border-color">|</span>
+                          <span className="flex items-center gap-1"><MoonIcon/>Month: {starsData.stars.monthly}</span>
+                          <span className="text-border-color">|</span>
+                          <span className="flex items-center gap-1">Total<StarIcon className="text-accent-star w-4 h-4 mx-1"/>: {starsData.totalEarned}/{starsData.totalTasks}</span>
+                      </div>
+                  </Widget>
+                  <div className="flex gap-2 pt-2">
+                       <button onClick={handleThemeToggle} title="Toggle Theme" className="p-2 rounded-full text-text-secondary hover:text-text-primary hover:bg-widget-hover transition-colors">
+                          {theme === 'dark' ? <LightbulbIcon className="w-6 h-6"/> : <MoonStarsIcon className="w-6 h-6"/>}
+                      </button>
+                       <button onClick={() => openModal('data-io')} title="Import/Export Data" className="p-2 rounded-full text-text-secondary hover:text-text-primary hover:bg-widget-hover transition-colors">
+                          <DataIcon className="w-6 h-6"/>
+                      </button>
+                      <button onClick={handleReset} title="Reset All Data" className="p-2 rounded-full text-text-secondary hover:text-text-primary hover:bg-widget-hover transition-colors">
+                          <ResetIcon className="w-6 h-6"/>
+                      </button>
+                  </div>
+              </div>
+
+              {/* Main Content Area */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <div className="lg:col-span-1 space-y-4">
+                      <CalendarWidget currentDate={currentDate} onHeaderClick={() => openModal('manage-targets')} />
+                      <div className="flex gap-4">
+                        <StreakWidget streak={streak}/>
+                        <CountdownWidget targets={targets}/>
+                      </div>
+                  </div>
+                  <div className="lg:col-span-2">
+                      <NotesWidget notes={notes} onAddClick={() => openModal('add-note')} onNoteClick={(note) => openModal('manage-note', { note })}/>
+                  </div>
+              </div>
+
+              {/* Task Area */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <TaskWidget period={TaskPeriod.Day} tasks={dayTasks} onAreaClick={() => openModal('add-task', {period: TaskPeriod.Day})} onTaskClick={(task) => openModal('manage-task', {task, period: TaskPeriod.Day})}/>
+                  <TaskWidget period={TaskPeriod.Week} tasks={weekTasks} onAreaClick={() => openModal('add-task', {period: TaskPeriod.Week})} onTaskClick={(task) => openModal('manage-task', {task, period: TaskPeriod.Week})} />
+                  <TaskWidget period={TaskPeriod.Month} tasks={monthTasks} onAreaClick={() => openModal('add-task', {period: TaskPeriod.Month})} onTaskClick={(task) => openModal('manage-task', {task, period: TaskPeriod.Month})}/>
+              </div>
+              
+              {/* Modals */}
+              <RenderModals 
+                  modal={modal} 
+                  closeModal={closeModal} 
+                  modalData={modalData}
+                  notes={notes}
+                  targets={targets}
+                  onAddTask={addTask}
+                  onRemoveTask={removeTask}
+                  onCompleteTask={completeTask}
+                  onAddNote={addNote}
+                  onEditNote={editNote}
+                  onDeleteNote={deleteNote}
+                  onAddTarget={addTarget}
+                  onDeleteTarget={deleteTarget}
+                  onExport={handleExport}
+                  onTriggerImport={triggerImport}
+              />
+          </div>
+        );
+      }
+
+      // Render the App
+      const rootElement = document.getElementById('root');
+      const root = ReactDOM.createRoot(rootElement);
+      root.render(
+        <StrictMode>
+          <App />
+        </StrictMode>
+      );
+    </script>
+  </body>
+</html>
