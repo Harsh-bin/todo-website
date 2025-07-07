@@ -1,48 +1,37 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Zenith Task Tracker</title>
-    <link rel="icon" type="image/png" href="https://placehold.co/32x32/000000/FFFFFF?text=ZT" />
+    <link rel="icon" type="image/png" href="icons8.png" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {},
+        }
+      }
+    </script>
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-    <!-- Babel for in-browser JSX/ESNext transformation. data-type="module" is crucial for imports. -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <link rel="stylesheet" href="index.css">
-  </head>
-  <body>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.1.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "react/": "https://esm.sh/react@^19.1.0/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-slate-100 text-slate-800 dark:bg-black dark:text-slate-300 font-sans transition-colors duration-300">
     <div id="root"></div>
-
-    <!-- IndexedDB Utility Functions -->
-    <script type="module" src="src/utils/indexedDb.js"></script>
-    <!-- Theme Utility Functions -->
-    <script type="module" src="src/utils/theme.js"></script>
-    <!-- Date Helper Functions -->
-    <script type="module" src="src/utils/dateHelpers.js"></script>
-    <!-- Icon Components -->
-    <script type="module" src="src/components/icons.js"></script>
-    <!-- Common UI Components -->
-    <script type="module" src="src/components/common.js"></script>
-    <!-- Widget Components -->
-    <script type="module" src="src/components/widgets.js"></script>
-    <!-- Modal Components -->
-    <script type="module" src="src/components/modals.js"></script>
-    
-    <!-- Main App Component - Processed by Babel -->
-    <script type="text/babel" data-type="module">
-      // Import React hooks
+    <script type="text/babel">
       const { StrictMode, useState, useEffect, useCallback, useRef } = React;
-
-      // Import modules from external files
-      import { initDB, getData, putData, deleteData, clearStore, exportAllData, importAllData } from './src/utils/indexedDb.js';
-      import { getTheme, saveTheme, toggleTheme } from './src/utils/theme.js';
-      import { getToday, getWeekNumber, getMonth, isMonday, isFirstOfMonth } from './src/utils/dateHelpers.js';
-      import { StarIcon, SunIcon, WeekIcon, MoonIcon, FireIcon, NoteIcon, LinkIcon, TextIcon, PlusIcon, DataIcon, ExportIcon, ImportIcon, ResetIcon, LightbulbIcon, MoonStarsIcon } from './src/components/icons.js';
-      import { Widget, ProgressBar, Modal } from './src/components/common.js';
-      import { TaskWidget, CalendarWidget, NotesWidget, StreakWidget, CountdownWidget } from './src/components/widgets.js';
-      import { RenderModals } from './src/components/modals.js';
 
       // --- Enums from types.ts ---
       const TaskPeriod = {
@@ -51,104 +40,459 @@
         Month: 'month',
       };
 
-      // --- IndexedDB Keys (simulating "file names" in appSettings store) ---
-      const IDB_KEYS = {
-          DAY_TASKS: 'day_tasks',
-          WEEK_TASKS: 'week_tasks',
-          MONTH_TASKS: 'month_tasks',
-          NOTES: 'notes',
-          TARGET_DATES: 'target_dates',
-          STARS_DATA: 'stars_data',
-          STREAK: 'streak',
-          THEME: 'theme'
+      // --- Icons from components/icons.tsx ---
+      const StarIcon = ({ className }) => (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className || 'w-6 h-6'}>
+          <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434L10.788 3.21z" clipRule="evenodd" />
+        </svg>
+      );
+
+      const SunIcon = ({ className }) => (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className || 'w-5 h-5'}>
+          <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.106a.75.75 0 010 1.06l-1.591 1.59a.75.75 0 11-1.06-1.06l1.59-1.59a.75.75 0 011.06 0zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.803 17.803a.75.75 0 01-1.06 0l-1.59-1.591a.75.75 0 111.06-1.06l1.59 1.59a.75.75 0 010 1.06zM12 21a.75.75 0 01-.75-.75v-2.25a.75.75 0 011.5 0V21a.75.75 0 01-.75-.75zM7.106 18.894a.75.75 0 010-1.06l1.59-1.59a.75.75 0 111.06 1.06l-1.59 1.59a.75.75 0 01-1.06 0zM3 12a.75.75 0 01.75-.75h2.25a.75.75 0 010 1.5H3.75A.75.75 0 013 12zM6.106 7.106a.75.75 0 011.06 0l1.591 1.59a.75.75 0 01-1.06 1.06l-1.59-1.591a.75.75 0 010-1.06z" />
+        </svg>
+      );
+
+      const WeekIcon = ({ className }) => (
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className || 'w-5 h-5'}>
+              <path fillRule="evenodd" d="M6.75 2.25A.75.75 0 017.5 3v1.5h9V3A.75.75 0 0118 3v1.5h.75a3 3 0 013 3v11.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V7.5a3 3 0 013-3H6V3a.75.75 0 01.75-.75zM5.25 6.75c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h13.5c.621 0 1.125-.504 1.125-1.125V7.875c0-.621-.504-1.125-1.125-1.125H5.25z" clipRule="evenodd" />
+          </svg>
+      );
+
+      const MoonIcon = ({ className }) => (
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className || 'w-5 h-5'}>
+              <path fillRule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-3.51 1.713-6.635 4.398-8.552a.75.75 0 01.819.162z" clipRule="evenodd" />
+          </svg>
+      );
+
+      const NoteIcon = ({ className }) => (
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className || 'w-5 h-5'}>
+              <path fillRule="evenodd" d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0016.5 9h-1.875a.375.375 0 01-.375-.375V6.75A3.75 3.75 0 0010.5 3H5.625zM12.75 3.75V8.25h4.5V12h-4.5a.75.75 0 01-.75-.75V3.75h.75z" clipRule="evenodd" />
+          </svg>
+      );
+
+      const LinkIcon = ({ className }) => (
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className || 'w-4 h-4'}>
+            <path d="M12 21a9 9 0 100-18 9 9 0 000 18z" />
+            <path d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757a.75.75 0 111.06 1.06l-1.757 1.757a3 3 0 104.243 4.243l4.5-4.5a3 3 0 00-4.243-4.243l-1.954 1.954a.75.75 0 11-1.06-1.06l1.954-1.954a4.5 4.5 0 016.364 0z" />
+            <path d="M10.81 15.312a4.5 4.5 0 01-1.242-7.244l4.5-4.5a4.5 4.5 0 016.364 6.364l-1.757 1.757a.75.75 0 11-1.06-1.06l1.757-1.757a3 3 0 10-4.243-4.243l-4.5 4.5a3 3 0 004.243 4.243l1.954-1.954a.75.75 0 111.06 1.06l-1.954 1.954a4.5 4.5 0 01-6.364 0z" />
+          </svg>
+      );
+
+      const TextIcon = ({ className }) => (
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className || 'w-4 h-4'}>
+              <path fillRule="evenodd" d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0016.5 9h-1.875a.375.375 0 01-.375-.375V6.75A3.75 3.75 0 0010.5 3H5.625zM12.75 3.75V8.25h4.5V12h-4.5a.75.75 0 01-.75-.75V3.75h.75z" clipRule="evenodd" />
+          </svg>
+      );
+
+      const PlusIcon = ({ className }) => (
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className || 'w-6 h-6'}>
+              <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 9a.75.75 0 00-1.5 0v2.25H9a.75.75 0 000 1.5h2.25V15a.75.75 0 001.5 0v-2.25H15a.75.75 0 000-1.5h-2.25V9z" clipRule="evenodd" />
+          </svg>
+      );
+      
+      const SettingsIcon = ({ className }) => (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className || 'w-6 h-6'}>
+            <path fillRule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567L9.05 5.85a1.5 1.5 0 01-1.83 1.255l-3.086-.73a1.875 1.875 0 00-2.28 1.217l-1.944 3.366a1.875 1.875 0 00.82 2.45l2.553 1.474a1.5 1.5 0 010 2.592l-2.553 1.474a1.875 1.875 0 00-.82 2.45l1.944 3.366a1.875 1.875 0 002.28 1.217l3.086-.73a1.5 1.5 0 011.83 1.255l.178 2.034c.15.904.933 1.567 1.85 1.567h1.844c.917 0 1.699-.663 1.85-1.567l.178-2.034a1.5 1.5 0 011.83-1.255l3.086.73a1.875 1.875 0 002.28-1.217l1.944-3.366a1.875 1.875 0 00-.82-2.45l-2.553-1.474a1.5 1.5 0 010-2.592l2.553-1.474a1.875 1.875 0 00.82-2.45l-1.944-3.366a1.875 1.875 0 00-2.28-1.217l-3.086.73a1.5 1.5 0 01-1.83-1.255l-.178-2.034A1.875 1.875 0 0012.922 2.25h-1.844zM12 15.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" clipRule="evenodd" />
+        </svg>
+      );
+
+      const ExportIcon = ({ className }) => (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className || 'w-6 h-6'}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+        </svg>
+      );
+      
+      const ImportIcon = ({ className }) => (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className || 'w-6 h-6'}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+        </svg>
+      );
+
+      const ResetIcon = ({ className }) => (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className || 'w-6 h-6'}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.664 0l3.181-3.183m-3.181-4.991v4.99" />
+        </svg>
+      );
+
+      const TrashIcon = ({ className }) => (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className || 'w-5 h-5'}>
+          <path fillRule="evenodd" d="M16.5 4.478v.227a48.816 48.816 0 013.878.512.75.75 0 11-.256 1.478l-.209-.035-1.005 13.006a.75.75 0 01-.749.658h-7.5a.75.75 0 01-.749-.658L5.53 6.66l-.209.035a.75.75 0 01-.256-1.478A48.567 48.567 0 017.5 4.705v-.227c0-1.564 1.213-2.9 2.816-2.9h1.368c1.603 0 2.816 1.336 2.816 2.9zM5.25 6.75A.75.75 0 016 7.5h12a.75.75 0 01.75.75v.008l-1.005 13.006a2.25 2.25 0 01-2.245 1.986h-7.5a2.25 2.25 0 01-2.245-1.986L4.5 8.258v-.008A.75.75 0 015.25 6.75z" clipRule="evenodd" />
+        </svg>
+      );
+      
+      const PencilIcon = ({ className }) => (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className || 'w-5 h-5'}>
+          <path d="M21.731 2.269a2.625 2.625 0 00-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 000-3.712zM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 00-1.32 2.214l-.8 2.685a.75.75 0 00.933.933l2.685-.8a5.25 5.25 0 002.214-1.32l8.4-8.4z" />
+          <path d="M5.25 5.25a3 3 0 00-3 3v10.5a3 3 0 003 3h10.5a3 3 0 003-3V13.5a.75.75 0 00-1.5 0v5.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5V8.25a1.5 1.5 0 011.5-1.5h5.25a.75.75 0 000-1.5H5.25z" />
+        </svg>
+      );
+      
+      const CheckIcon = ({ className }) => (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className || 'w-5 h-5'}>
+          <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clipRule="evenodd" />
+        </svg>
+      );
+      
+      const SaveIcon = ({ className }) => (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className || 'w-6 h-6'}>
+            <path d="M3 5.25a3.75 3.75 0 013.75-3.75h6.375a3.75 3.75 0 013.75 3.75v1.5c0 .939-.368 1.83-1.026 2.488-1.088.98-2.622 1.512-4.224 1.512h-1.75a.75.75 0 000 1.5h1.75c2.141 0 4.053-.662 5.5-1.849 1.446-1.187 2.25-2.893 2.25-4.651v-1.5A3.75 3.75 0 0016.125 1.5H6.75A3.75 3.75 0 003 5.25v13.5A3.75 3.75 0 006.75 22.5h10.5A3.75 3.75 0 0021 18.75v-3.19a.75.75 0 00-1.5 0v3.19a2.25 2.25 0 01-2.25 2.25H6.75a2.25 2.25 0 01-2.25-2.25v-13.5z" />
+            <path d="M10.5 10.5a.75.75 0 00-1.5 0v2.69l-1.6-1.601a.75.75 0 00-1.06 1.06l2.75 2.75a.75.75 0 001.06 0l2.75-2.75a.75.75 0 10-1.06-1.06l-1.6 1.601v-2.69z" />
+        </svg>
+      );
+
+      // --- Components ---
+      const Widget = ({ children, className = '', onClick }) => {
+        return (
+          <div 
+            className={`bg-white dark:bg-transparent border border-slate-300 dark:border-white/20 rounded-lg p-4 transition-all duration-300 ease-out 
+                        hover:scale-[1.02] hover:border-slate-400 dark:hover:border-white/60 hover:shadow-lg dark:hover:shadow-[0_0_20px_rgba(255,255,255,0.1),0_0_40px_rgba(255,255,255,0.05)] 
+                        ${className}`}
+            onClick={onClick}
+          >
+            {children}
+          </div>
+        );
       };
 
-      // --- Custom Hook for IndexedDB State Management ---
-      const useIndexedDBState = (key, initialValue) => {
-        const [storedValue, setStoredValue] = useState(initialValue);
-        const [isLoaded, setIsLoaded] = useState(false);
+      const ProgressBar = ({ percentage }) => {
+        const p = Math.max(0, Math.min(100, percentage));
+        return (
+          <div className="w-full bg-slate-200 dark:bg-white/10 rounded-full h-2 my-1 relative overflow-hidden text-xs font-mono">
+            <div
+              className="bg-slate-700 dark:bg-slate-300 h-full rounded-full transition-all duration-500 ease-out flex items-center justify-center"
+              style={{ width: `${p}%` }}
+            >
+            </div>
+          </div>
+        );
+      };
 
-        // Load data on component mount
-        useEffect(() => {
-          const loadData = async () => {
-            try {
-              const data = await getData(key);
-              if (data !== undefined) {
-                setStoredValue(data);
-              } else {
-                // If no data in DB, save initial value
-                await putData(key, initialValue);
-              }
-            } catch (error) {
-              console.error(`Error loading data for ${key} from IndexedDB:`, error);
-            } finally {
-              setIsLoaded(true);
-            }
+      const Modal = ({ isOpen, onClose, children, size = 'default' }) => {
+          if (!isOpen) return null;
+
+          const sizeClasses = {
+              default: 'max-w-md w-full',
+              fullscreen: 'w-[95vw] h-[85vh] max-w-7xl',
           };
-          loadData();
-        }, [key]); // Re-run if key changes (unlikely for app-level state)
 
-        // Update data in IndexedDB when state changes
-        const setValue = useCallback(async (value) => {
+          return (
+              <div 
+                  className="fixed inset-0 bg-slate-500/30 dark:bg-black/80 flex justify-center items-center z-50 backdrop-blur-sm"
+                  onClick={onClose}
+                  aria-modal="true"
+                  role="dialog"
+              >
+                  <div 
+                      className={`bg-white dark:bg-black text-slate-900 dark:text-slate-300 rounded-lg shadow-xl border border-slate-300 dark:border-slate-800 flex flex-col ${sizeClasses[size]}`}
+                      onClick={(e) => e.stopPropagation()}
+                  >
+                      {children}
+                  </div>
+              </div>
+          );
+      };
+      
+      // --- App Logic from App.tsx ---
+      
+      // --- Utility Functions ---
+      const getToday = () => new Date().toISOString().split('T')[0];
+      const getWeekNumber = (d) => {
+          d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+          d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+          const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+          const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+          return `${d.getUTCFullYear()}-${weekNo}`;
+      };
+      const getMonth = () => `${new Date().getFullYear()}-${new Date().getMonth() + 1}`;
+      const isMonday = () => new Date().getDay() === 1;
+      const isFirstOfMonth = () => new Date().getDate() === 1;
+
+      const LOCAL_STORAGE_KEYS = [
+          'day_tasks', 'week_tasks', 'month_tasks', 'notes', 'target_dates', 'stars', 'streak', 'theme'
+      ];
+
+      // --- Custom Hook for Local Storage ---
+      const useLocalStorage = (key, initialValue) => {
+        const [storedValue, setStoredValue] = useState(() => {
+          try {
+            const item = window.localStorage.getItem(key);
+            return item ? JSON.parse(item) : initialValue;
+          } catch (error) {
+            console.error(error);
+            return initialValue;
+          }
+        });
+
+        const setValue = (value) => {
           try {
             const valueToStore = value instanceof Function ? value(storedValue) : value;
             setStoredValue(valueToStore);
-            await putData(key, valueToStore);
+            window.localStorage.setItem(key, JSON.stringify(valueToStore));
           } catch (error) {
-            console.error(`Error saving data for ${key} to IndexedDB:`, error);
+            console.error(error);
           }
-        }, [key, storedValue]);
+        };
 
-        return [storedValue, setValue, isLoaded];
+        return [storedValue, setValue];
       };
+
+      // --- Child Components ---
+      const SettingsDropdown = ({ onToggleTheme, onTriggerImport, onExport, onReset, theme }) => {
+        const [isOpen, setIsOpen] = useState(false);
+        const dropdownRef = useRef(null);
+
+        useEffect(() => {
+            const handleClickOutside = (event) => {
+                if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                    setIsOpen(false);
+                }
+            };
+            document.addEventListener("mousedown", handleClickOutside);
+            return () => document.removeEventListener("mousedown", handleClickOutside);
+        }, [dropdownRef]);
+
+        const menuItemClass = "w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors";
+
+        return (
+            <div className="relative" ref={dropdownRef}>
+                <button onClick={() => setIsOpen(!isOpen)} title="Settings" className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
+                    <SettingsIcon className="w-6 h-6"/>
+                </button>
+                {isOpen && (
+                    <div className="absolute right-0 mt-2 w-56 origin-top-right bg-white dark:bg-black rounded-md shadow-lg ring-1 ring-black dark:ring-slate-800 ring-opacity-5 focus:outline-none z-10">
+                        <div className="py-1">
+                            <button onClick={() => { onToggleTheme(); setIsOpen(false); }} className={menuItemClass}>
+                                {theme === 'dark' ? <SunIcon className="w-5 h-5"/> : <MoonIcon className="w-5 h-5"/>}
+                                Switch to {theme === 'dark' ? 'Light' : 'Dark'} Theme
+                            </button>
+                             <button onClick={() => { onTriggerImport(); setIsOpen(false); }} className={menuItemClass}>
+                                <ImportIcon className="w-5 h-5"/>
+                                Import Data
+                            </button>
+                            <button onClick={() => { onExport(); setIsOpen(false); }} className={menuItemClass}>
+                                <ExportIcon className="w-5 h-5"/>
+                                Export Data
+                            </button>
+                            <div className="border-t border-slate-200 dark:border-slate-800 my-1"></div>
+                            <button onClick={() => { onReset(); setIsOpen(false); }} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-red-700 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+                                <ResetIcon className="w-5 h-5"/>
+                                Reset All Data
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+      const TaskWidget = ({ period, tasks, onAreaClick, onCompleteTask, onRemoveTask }) => {
+        const total = tasks.length;
+        const completed = tasks.filter(t => t.completed).length;
+        const progress = total > 0 ? (completed / total) * 100 : 0;
+        
+        const icons = {
+          [TaskPeriod.Day]: <SunIcon className="w-5 h-5 text-yellow-500 dark:text-yellow-400" />,
+          [TaskPeriod.Week]: <WeekIcon className="w-5 h-5 text-sky-500 dark:text-sky-400" />,
+          [TaskPeriod.Month]: <MoonIcon className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />,
+        };
+        
+        return (
+          <Widget className="flex-1 min-w-[280px] flex flex-col" onClick={onAreaClick}>
+            <div className="flex items-center gap-2 mb-2">
+              {icons[period]}
+              <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">{period.charAt(0).toUpperCase() + period.slice(1)} Tasks</h2>
+            </div>
+            <div className="text-sm space-y-1 h-24 overflow-y-auto pr-2 flex-grow">
+              {tasks.length > 0 ? tasks.map(task => (
+                <div 
+                  key={task.id}
+                  className={`group flex items-center justify-between gap-2 p-1 rounded transition-colors cursor-pointer ${
+                      !task.completed && 'hover:bg-slate-200/60 dark:hover:bg-white/10'
+                  }`}
+                >
+                  <span className={`flex-grow ${task.completed ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-300'}`}>
+                      {task.text}
+                  </span>
+                   {!task.completed && (
+                      <div className="flex items-center flex-shrink-0 gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={(e) => { e.stopPropagation(); onCompleteTask(task); }} title="Mark Complete" className="p-1 rounded-full text-green-600 dark:text-green-500 hover:bg-green-500/10"><CheckIcon className="w-5 h-5"/></button>
+                          <button onClick={(e) => { e.stopPropagation(); onRemoveTask(task.id); }} title="Delete Task" className="p-1 rounded-full text-red-600 dark:text-red-500 hover:bg-red-500/10"><TrashIcon className="w-4 h-4"/></button>
+                      </div>
+                  )}
+                </div>
+              )) : <p className="text-slate-500 h-full flex items-center justify-center">Click to add a task</p>}
+            </div>
+            <ProgressBar percentage={progress} />
+          </Widget>
+        );
+      };
+
+      const CalendarWidget = ({ currentDate, onHeaderClick }) => {
+          const year = currentDate.getFullYear();
+          const month = currentDate.getMonth();
+          const today = currentDate.getDate();
+
+          const monthName = currentDate.toLocaleString('default', { month: 'long' });
+          const firstDay = new Date(year, month, 1).getDay();
+          const daysInMonth = new Date(year, month + 1, 0).getDate();
+          
+          const days = Array.from({ length: firstDay }, (_, i) => <div key={`empty-${i}`} className="w-8 h-8"></div>);
+          for (let day = 1; day <= daysInMonth; day++) {
+              days.push(
+                  <div key={day} className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${day === today ? 'bg-slate-900 text-white dark:bg-white dark:text-black font-bold' : ''}`}>
+                      {day}
+                  </div>
+              );
+          }
+
+          return (
+              <Widget className="w-full max-w-[320px] mx-auto">
+                  <h2 onClick={onHeaderClick} className="text-lg font-bold mb-2 text-slate-800 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-black dark:hover:text-white transition-colors"><WeekIcon />Calendar</h2>
+                  <div className="text-center mb-2 font-mono">{monthName} {year}</div>
+                  <div className="grid grid-cols-7 gap-1 text-center text-xs font-mono text-slate-500 dark:text-slate-400">
+                      <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+                      {days}
+                  </div>
+              </Widget>
+          );
+      };
+
+      const NotesWidget = ({ notes, onAddNote, onEditNote, onDeleteNote }) => {
+        const [isAddOpen, setIsAddOpen] = useState(false);
+        const addRef = useRef(null);
+
+        useEffect(() => {
+            const handleClickOutside = (event) => {
+                if (addRef.current && !addRef.current.contains(event.target)) {
+                    setIsAddOpen(false);
+                }
+            };
+            document.addEventListener("mousedown", handleClickOutside);
+            return () => document.removeEventListener("mousedown", handleClickOutside);
+        }, [addRef]);
+        
+        const menuItemClass = "w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors";
+
+        return (
+          <Widget className="flex-1">
+              <div className="flex justify-between items-center mb-2">
+                  <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2"><NoteIcon/>Notes</h2>
+                  <div className="relative" ref={addRef}>
+                    <button onClick={() => setIsAddOpen(o => !o)} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                        <PlusIcon className="w-6 h-6"/>
+                    </button>
+                    {isAddOpen && (
+                         <div className="absolute right-0 mt-2 w-48 origin-top-right bg-white dark:bg-black rounded-md shadow-lg ring-1 ring-black dark:ring-slate-800 ring-opacity-5 focus:outline-none z-10">
+                            <div className="py-1">
+                                <button onClick={() => { onAddNote('text'); setIsAddOpen(false); }} className={menuItemClass}>
+                                    <TextIcon className="w-5 h-5"/> Add Text Note
+                                </button>
+                                <button onClick={() => { onAddNote('link'); setIsAddOpen(false); }} className={menuItemClass}>
+                                    <LinkIcon className="w-5 h-5"/> Add Link
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                  </div>
+              </div>
+              <div className="space-y-2 h-[220px] overflow-y-auto pr-2">
+                  {notes.length > 0 ? notes.map(note => (
+                      <div key={note.id} className="group flex items-start justify-between gap-2 text-sm p-2 rounded hover:bg-slate-200/60 dark:hover:bg-white/10 transition-colors">
+                        <div className="flex items-start gap-2 flex-grow overflow-hidden">
+                            {note.type === 'link' ? 
+                                <LinkIcon className="w-4 h-4 mt-1 text-cyan-500 dark:text-cyan-400 flex-shrink-0" /> : 
+                                <TextIcon className="w-4 h-4 mt-1 text-slate-500 dark:text-slate-400 flex-shrink-0" />}
+                            
+                            <div className="flex-grow overflow-hidden">
+                                {note.type === 'link' ? 
+                                    <a href={note.content} target="_blank" rel="noopener noreferrer" className="text-cyan-600 dark:text-cyan-400 hover:underline break-all">{note.content}</a> : 
+                                    <span 
+                                        className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap break-words"
+                                        style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                                    >{note.content}</span>
+                                }
+                            </div>
+                        </div>
+                        <div className="flex items-center flex-shrink-0 gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => onEditNote(note)} title="Edit Note" className="p-1 rounded-full text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-white/20"><PencilIcon className="w-4 h-4"/></button>
+                            <button onClick={() => onDeleteNote(note.id)} title="Delete Note" className="p-1 rounded-full text-red-600 dark:text-red-500 hover:bg-red-500/10"><TrashIcon className="w-4 h-4"/></button>
+                        </div>
+                      </div>
+                  )) : <p className="text-slate-500 h-full flex items-center justify-center">Click the '+' to add a note</p>}
+              </div>
+          </Widget>
+        );
+      };
+
+      const StreakWidget = ({ streak }) => (
+        <Widget className="flex-shrink-0">
+            <div className="flex items-center justify-center gap-x-3 text-md font-mono h-full">
+                <span className="flex items-center gap-2 text-slate-800 dark:text-slate-200">
+                  Streak <span className="text-amber-500 dark:text-yellow-400 font-bold">🔥 {streak.current}</span>
+                </span>
+                <span className="text-slate-400 dark:text-slate-600">|</span>
+                <div className="flex items-center gap-1">
+                    {Array.from({ length: 7 }).map((_, i) => (
+                        <StarIcon key={i} className={`w-3.5 h-3.5 ${i < streak.starsThisWeek ? 'text-amber-500 dark:text-yellow-400' : 'text-slate-300 dark:text-white/20'}`}/>
+                    ))}
+                </div>
+                 <span className="text-sm text-slate-500 dark:text-slate-400">{streak.starsThisWeek}/7</span>
+            </div>
+        </Widget>
+    );
+
+    const CountdownItemWidget = ({ target, onDeleteTarget }) => (
+        <Widget className="relative p-2 flex-grow min-w-[180px]">
+            <button 
+                onClick={(e) => { e.stopPropagation(); onDeleteTarget(target.id); }} 
+                className="absolute top-1 right-1 text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded-full w-5 h-5 flex items-center justify-center bg-white/50 dark:bg-slate-800/50 hover:bg-red-500/10 z-10"
+                title="Delete Countdown"
+            >
+                <span className="text-lg leading-none">&times;</span>
+            </button>
+            <div className="flex justify-between text-xs font-mono text-slate-800 dark:text-slate-300 mb-1">
+                <span className="truncate pr-4 font-semibold">{target.label}</span>
+                <span>{target.daysLeft}d left</span>
+            </div>
+            <ProgressBar percentage={target.progress} />
+        </Widget>
+    );
 
       // --- Main App Component ---
       function App() {
-        // Initialize IndexedDB on app start
-        useEffect(() => {
-            initDB().catch(error => console.error("Failed to initialize IndexedDB:", error));
-        }, []);
-
-        // State variables using the custom IndexedDB hook
-        const [dayTasks, setDayTasks, isDayTasksLoaded] = useIndexedDBState(IDB_KEYS.DAY_TASKS, []);
-        const [weekTasks, setWeekTasks, isWeekTasksLoaded] = useIndexedDBState(IDB_KEYS.WEEK_TASKS, []);
-        const [monthTasks, setMonthTasks, isMonthTasksLoaded] = useIndexedDBState(IDB_KEYS.MONTH_TASKS, []);
-        const [notes, setNotes, isNotesLoaded] = useIndexedDBState(IDB_KEYS.NOTES, []);
-        const [targets, setTargets, isTargetsLoaded] = useIndexedDBState(IDB_KEYS.TARGET_DATES, []);
-        const [starsData, setStarsData, isStarsDataLoaded] = useIndexedDBState(IDB_KEYS.STARS_DATA, {
+        const [dayTasks, setDayTasks] = useLocalStorage(`day_tasks`, []);
+        const [weekTasks, setWeekTasks] = useLocalStorage(`week_tasks`, []);
+        const [monthTasks, setMonthTasks] = useLocalStorage(`month_tasks`, []);
+        const [notes, setNotes] = useLocalStorage('notes', []);
+        const [targets, setTargets] = useLocalStorage('target_dates', []);
+        const [starsData, setStarsData] = useLocalStorage('stars', {
             stars: { daily: 0, weekly: 0, monthly: 0 },
             dailyResetDate: '', weeklyResetWeek: '', monthlyResetMonth: '',
             totalEarned: 0, totalTasks: 0
         });
-        const [streak, setStreak, isStreakLoaded] = useIndexedDBState(IDB_KEYS.STREAK, { current: 0, starsThisWeek: 0, lastUpdate: '' });
-        const [theme, setThemeState, isThemeLoaded] = useIndexedDBState(IDB_KEYS.THEME, 'dark');
+        const [streak, setStreak] = useLocalStorage('streak', { current: 0, starsThisWeek: 0, lastUpdate: '' });
+        const [theme, setTheme] = useLocalStorage('theme', 'dark');
 
         const [modal, setModal] = useState(null);
         const [modalData, setModalData] = useState(null);
         
         const fileInputRef = useRef(null);
         const currentDate = new Date();
-
-        // Apply theme from state to HTML
+        
         useEffect(() => {
-            if (isThemeLoaded) {
-                document.documentElement.setAttribute('data-theme', theme);
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
             }
-        }, [theme, isThemeLoaded]);
+        }, [theme]);
 
-        // Toggle theme and save to IndexedDB
-        const handleThemeToggle = useCallback(() => {
-            const newTheme = theme === 'dark' ? 'light' : 'dark';
-            setThemeState(newTheme);
-            saveTheme(newTheme); // Also save to IndexedDB via the utility function
-        }, [theme, setThemeState]);
+        const toggleTheme = () => {
+            setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+        };
 
-        // Handle daily/weekly/monthly resets and streak calculation
-        const handleResetsAndStreak = useCallback(async () => {
-          if (!isDayTasksLoaded || !isWeekTasksLoaded || !isMonthTasksLoaded || !isStarsDataLoaded || !isStreakLoaded) {
-              return; // Wait until all data is loaded from IndexedDB
-          }
-
+        const handleResetsAndStreak = useCallback(() => {
           const todayStr = getToday();
           const currentWeek = getWeekNumber(currentDate);
           const currentMonth = getMonth();
@@ -156,58 +500,42 @@
           let newStarsData = { ...starsData };
           let newStreak = { ...streak };
 
-          // Daily Reset Logic
           if (newStarsData.dailyResetDate !== todayStr) {
-            // Check for streak update based on previous day's completion
             if (streak.lastUpdate && streak.lastUpdate !== todayStr) {
-                // Fetch previous day's tasks to check completion
-                const prevDayTasks = await getData(IDB_KEYS.DAY_TASKS) || [];
-                const allDayTasksCompleted = prevDayTasks.length > 0 && prevDayTasks.every(t => t.completed);
+                const allDayTasksCompleted = dayTasks.length > 0 && dayTasks.every(t => t.completed);
                 if (allDayTasksCompleted) {
                     newStreak.current += 1;
                     newStreak.starsThisWeek = Math.min(7, newStreak.starsThisWeek + 1);
-                } else if(prevDayTasks.length > 0) { // If there were tasks but not all completed
+                } else if(dayTasks.length > 0) {
                     newStreak.current = 0;
                 }
             }
             newStreak.lastUpdate = todayStr;
             newStarsData.stars.daily = 0;
             newStarsData.dailyResetDate = todayStr;
-            await clearStore(IDB_KEYS.DAY_TASKS); // Clear daily tasks in DB
-            setDayTasks([]); // Update state
+            setDayTasks([]);
           }
           
-          // Weekly Reset Logic (on Monday)
           if (newStarsData.weeklyResetWeek !== currentWeek && isMonday()) {
               newStarsData.stars.weekly = 0;
               newStarsData.weeklyResetWeek = currentWeek;
               newStreak.starsThisWeek = 0;
-              await clearStore(IDB_KEYS.WEEK_TASKS); // Clear weekly tasks in DB
-              setWeekTasks([]); // Update state
+              setWeekTasks([]);
           }
 
-          // Monthly Reset Logic (on 1st of month)
           if (newStarsData.monthlyResetMonth !== currentMonth && isFirstOfMonth()) {
               newStarsData.stars.monthly = 0;
               newStarsData.monthlyResetMonth = currentMonth;
-              await clearStore(IDB_KEYS.MONTH_TASKS); // Clear monthly tasks in DB
-              setMonthTasks([]); // Update state
+              setMonthTasks([]);
           }
           
           setStarsData(newStarsData);
           setStreak(newStreak);
-        }, [
-            starsData, streak, dayTasks,
-            isDayTasksLoaded, isWeekTasksLoaded, isMonthTasksLoaded, isStarsDataLoaded, isStreakLoaded,
-            setDayTasks, setWeekTasks, setMonthTasks, setStarsData, setStreak
-        ]);
+        }, []);
 
-        // Run resets and streak logic once all data is loaded
         useEffect(() => {
-            if (isDayTasksLoaded && isWeekTasksLoaded && isMonthTasksLoaded && isStarsDataLoaded && isStreakLoaded) {
-                handleResetsAndStreak();
-            }
-        }, [isDayTasksLoaded, isWeekTasksLoaded, isMonthTasksLoaded, isStarsDataLoaded, isStreakLoaded, handleResetsAndStreak]);
+          handleResetsAndStreak();
+        }, []);
 
 
         const openModal = (type, data = null) => {
@@ -220,10 +548,9 @@
           setModalData(null);
         };
 
-        const addTask = async (period, text) => {
+        const addTask = (period, text) => {
           if (!text.trim()) return;
-          const newTask = { id: crypto.randomUUID(), text: text.trim(), completed: false, period: period }; // Store period for easier retrieval
-          
+          const newTask = { id: crypto.randomUUID(), text: text.trim(), completed: false };
           const taskSetter = {
             [TaskPeriod.Day]: setDayTasks,
             [TaskPeriod.Week]: setWeekTasks,
@@ -231,144 +558,129 @@
           }[period];
 
           taskSetter(prev => [...prev, newTask]);
-          // Store individual task in IndexedDB's tasks store
-          await putData(IDB_KEYS.TASKS, newTask, 'tasks'); 
           setStarsData(prev => ({...prev, totalTasks: prev.totalTasks + 1}));
           closeModal();
         };
 
-        const removeTask = async (period, id) => {
+        const removeTask = (period, id) => {
+          if (!window.confirm("Are you sure you want to delete this task?")) return;
           const taskSetter = {
             [TaskPeriod.Day]: setDayTasks,
             [TaskPeriod.Week]: setWeekTasks,
             [TaskPeriod.Month]: setMonthTasks,
           }[period];
           taskSetter(prev => prev.filter(t => t.id !== id));
-          await deleteData(id, 'tasks'); // Remove from IndexedDB's tasks store
           setStarsData(prev => ({...prev, totalTasks: Math.max(0, prev.totalTasks - 1)}));
-          closeModal();
         };
 
-        const completeTask = async (period, id) => {
+        const completeTask = (period, id) => {
           const taskSetter = {
             [TaskPeriod.Day]: setDayTasks,
             [TaskPeriod.Week]: setWeekTasks,
             [TaskPeriod.Month]: setMonthTasks,
           }[period];
           taskSetter(prev => prev.map(t => t.id === id ? {...t, completed: true} : t));
-          // Update task in IndexedDB's tasks store
-          const taskToUpdate = await getData(id, 'tasks');
-          if (taskToUpdate) {
-              await putData(IDB_KEYS.TASKS, {...taskToUpdate, completed: true}, 'tasks');
-          }
           setStarsData(prev => ({
             ...prev,
             stars: { ...prev.stars, [period]: prev.stars[period] + 1 },
             totalEarned: prev.totalEarned + 1
           }));
-          closeModal();
         };
 
-        const addNote = async (type, content) => {
+        const addOrUpdateNote = (type, content, id = null) => {
           if (!content.trim()) return;
           if (type === 'link' && !/^https?:\/\//.test(content)) {
-              // Using a custom message box instead of alert()
-              openModal('message', { title: 'Invalid URL', message: 'Link must start with http:// or https://' });
+              alert("Invalid URL. Must start with http:// or https://");
               return;
           }
-          const newNote = { id: crypto.randomUUID(), type, content: content.trim() };
-          setNotes(prev => [newNote, ...prev]);
-          await putData(IDB_KEYS.NOTES, newNote, 'notes'); // Save to IndexedDB's notes store
+          if (id) { // Update
+            setNotes(prev => prev.map(n => n.id === id ? {...n, content: content.trim()} : n));
+          } else { // Add
+            const newNote = { id: crypto.randomUUID(), type, content: content.trim() };
+            setNotes(prev => [newNote, ...prev]);
+          }
           closeModal();
         };
         
-        const editNote = async (id, newContent) => {
-          setNotes(prev => prev.map(n => n.id === id ? {...n, content: newContent} : n));
-          await putData(IDB_KEYS.NOTES, {...modalData.note, content: newContent}, 'notes'); // Update in IndexedDB's notes store
-          closeModal();
+        const deleteNote = (id) => {
+          if (window.confirm("Are you sure you want to delete this note?")) {
+            setNotes(prev => prev.filter(n => n.id !== id));
+          }
         };
 
-        const deleteNote = async (id) => {
-          setNotes(prev => prev.filter(n => n.id !== id));
-          await deleteData(id, 'notes'); // Remove from IndexedDB's notes store
-          closeModal();
-        };
-
-        const addTarget = async (label, date) => {
+        const addTarget = (label, date) => {
           if (!label.trim() || !date) return;
           if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(new Date(date).getTime())) {
-              openModal('message', { title: 'Invalid Date', message: 'Invalid date format. Please use YYYY-MM-DD.' });
+              alert("Invalid date format. Please use YYYY-MM-DD.");
               return;
           }
-          const newTarget = { id: crypto.randomUUID(), label, date, startDate: getToday() };
+          const newTarget = { id: crypto.randomUUID(), label: label.trim(), date, startDate: getToday() };
           setTargets(prev => [...prev, newTarget]);
-          await putData(IDB_KEYS.TARGET_DATES, newTarget, 'targets'); // Save to IndexedDB's targets store
         };
 
-        const deleteTarget = async (id) => {
-          setTargets(prev => prev.filter(t => t.id !== id));
-          await deleteData(id, 'targets'); // Remove from IndexedDB's targets store
-        };
-
-        const handleExport = async () => {
-          try {
-              const data = await exportAllData();
-              const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`;
-              const link = document.createElement('a');
-              link.href = jsonString;
-              link.download = `zenith-task-tracker-backup-${getToday()}.json`;
-              link.click();
-              closeModal();
-          } catch (error) {
-              console.error("Failed to export data:", error);
-              openModal('message', { title: 'Export Failed', message: `An error occurred during export: ${error.message}` });
+        const deleteTarget = (id) => {
+          if(window.confirm("Are you sure you want to delete this countdown?")) {
+            setTargets(prev => prev.filter(t => t.id !== id));
           }
         };
 
-        const handleImport = async (event) => {
+        const handleExport = () => {
+          const dataToExport = {};
+          LOCAL_STORAGE_KEYS.forEach(key => {
+              const item = localStorage.getItem(key);
+              if (item) {
+                  dataToExport[key] = JSON.parse(item);
+              }
+          });
+          const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(dataToExport, null, 2))}`;
+          const link = document.createElement('a');
+          link.href = jsonString;
+          link.download = `zenith-task-tracker-backup-${getToday()}.json`;
+          link.click();
+        };
+
+        const handleImport = (event) => {
             const file = event.target.files[0];
             event.target.value = null; // Reset to allow re-importing same file
             if (!file) return;
-            
-            closeModal(); // Close the modal before confirmation
 
             setTimeout(() => {
-                // Using a custom confirmation modal instead of window.confirm()
-                openModal('confirm', {
-                    title: 'Confirm Import',
-                    message: 'Are you sure you want to import data? This will overwrite all current data and the page will reload.',
-                    onConfirm: async () => {
-                        const reader = new FileReader();
-                        reader.onload = async (e) => {
-                            try {
-                                const text = e.target.result;
-                                const data = JSON.parse(text);
+                if (!window.confirm("Are you sure you want to import data? This will overwrite all current data and the page will reload.")) {
+                    return;
+                }
 
-                                if (typeof data !== 'object' || data === null || Array.isArray(data)) {
-                                    throw new Error("Backup file is not in a valid format.");
-                                }
-                                
-                                // Import data into IndexedDB
-                                await importAllData(data);
-                                
-                                openModal('message', { 
-                                    title: 'Import Successful', 
-                                    message: 'Data imported successfully! The page will now reload.',
-                                    onClose: () => window.location.reload() // Reload after user acknowledges
-                                });
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const text = e.target.result;
+                        const data = JSON.parse(text);
 
-                            } catch (error) {
-                                console.error("Failed to import data:", error);
-                                openModal('message', { title: 'Import Failed', message: `Import failed: ${error.message}. Please check the file format.` });
+                        if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+                            throw new Error("Backup file is not in a valid format.");
+                        }
+                        
+                        // Clear all managed data before importing
+                        LOCAL_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
+                        
+                        // Import data for known keys
+                        Object.keys(data).forEach(key => {
+                            if (LOCAL_STORAGE_KEYS.includes(key)) {
+                                localStorage.setItem(key, JSON.stringify(data[key]));
                             }
-                        };
-                        reader.onerror = () => {
-                            openModal('message', { title: 'File Read Error', message: 'An error occurred while reading the file.' });
-                        };
-                        reader.readAsText(file);
-                    },
-                    onCancel: () => {} // Do nothing on cancel
-                });
+                        });
+                        
+                        alert("Data imported successfully! The page will now reload.");
+                        window.location.reload();
+
+                    } catch (error) {
+                        console.error("Failed to import data:", error);
+                        alert(`Import failed: ${error.message}`);
+                    }
+                };
+                reader.onerror = () => {
+                    alert("An error occurred while reading the file.");
+                };
+                reader.readAsText(file);
             }, 50); // Small delay to improve UX
         };
         
@@ -377,69 +689,59 @@
         };
 
         const handleReset = () => {
-            openModal('confirm', {
-                title: 'Confirm Reset',
-                message: 'Are you sure you want to reset ALL data? This cannot be undone.',
-                onConfirm: async () => {
-                    try {
-                        await clearStore(IDB_KEYS.DAY_TASKS);
-                        await clearStore(IDB_KEYS.WEEK_TASKS);
-                        await clearStore(IDB_KEYS.MONTH_TASKS);
-                        await clearStore(IDB_KEYS.NOTES);
-                        await clearStore(IDB_KEYS.TARGET_DATES);
-                        await clearStore(IDB_KEYS.STARS_DATA);
-                        await clearStore(IDB_KEYS.STREAK);
-                        await clearStore(IDB_KEYS.THEME); // Clear theme too
-                        openModal('message', {
-                            title: 'Data Reset',
-                            message: 'All data has been reset! The page will now reload.',
-                            onClose: () => window.location.reload()
-                        });
-                    } catch (error) {
-                        console.error("Failed to reset data:", error);
-                        openModal('message', { title: 'Reset Failed', message: `An error occurred during reset: ${error.message}` });
-                    }
-                },
-                onCancel: () => {}
-            });
+          if (window.confirm("Are you sure you want to reset all data? This cannot be undone.")) {
+              LOCAL_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
+              window.location.reload();
+          }
         };
-
-        // Show loading state until all data is loaded from IndexedDB
-        if (!isDayTasksLoaded || !isWeekTasksLoaded || !isMonthTasksLoaded || !isNotesLoaded || !isTargetsLoaded || !isStarsDataLoaded || !isStreakLoaded || !isThemeLoaded) {
-            return (
-                <div className="min-h-screen flex items-center justify-center bg-background text-text-primary">
-                    <div className="text-xl animate-pulse">Loading your data...</div>
-                </div>
-            );
-        }
+        
+        const calculateTargetProgress = (target) => {
+            const now = new Date().getTime();
+            const start = new Date(target.startDate).getTime();
+            const end = new Date(target.date).getTime();
+            
+            if (now >= end) return { daysLeft: 0, progress: 100 };
+            if (now < start) return { daysLeft: Math.ceil((end - now) / (1000 * 60 * 60 * 24)), progress: 0 };
+            
+            const totalDuration = end - start;
+            const elapsed = now - start;
+            const progress = totalDuration > 0 ? (elapsed / totalDuration) * 100 : 0;
+            const daysLeft = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+            
+            return { daysLeft, progress };
+        };
+        
+        const activeTargets = targets
+            .map(t => ({...t, ...calculateTargetProgress(t)}))
+            .filter(t => t.daysLeft > 0 || t.progress < 100);
 
         return (
-          <div className="min-h-screen p-2 sm:p-4 lg:p-6 space-y-4 max-w-7xl mx-auto bg-background text-text-primary">
+          <div className="min-h-screen p-2 sm:p-4 lg:p-6 space-y-4 max-w-7xl mx-auto">
               <input type="file" ref={fileInputRef} onChange={handleImport} className="hidden" accept=".json,text/json"/>
+              
               {/* Header Area */}
-              <div className="flex justify-between items-start gap-4">
-                  <Widget className="w-full">
-                      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-md font-mono text-text-secondary">
-                          <span className="flex items-center gap-2 text-accent-star"><StarIcon/>EARNED:</span>
+              <div className="flex items-start gap-4">
+                  <Widget className="w-full flex-grow">
+                      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-md font-mono">
+                          <span className="flex items-center gap-2 text-amber-500 dark:text-yellow-400"><StarIcon/>EARNED:</span>
                           <span className="flex items-center gap-1"><SunIcon/>Day: {starsData.stars.daily}</span>
-                          <span className="text-border-color">|</span>
+                          <span className="text-slate-400 dark:text-slate-700">|</span>
                           <span className="flex items-center gap-1"><WeekIcon/>Week: {starsData.stars.weekly}</span>
-                          <span className="text-border-color">|</span>
+                          <span className="text-slate-400 dark:text-slate-700">|</span>
                           <span className="flex items-center gap-1"><MoonIcon/>Month: {starsData.stars.monthly}</span>
-                          <span className="text-border-color">|</span>
-                          <span className="flex items-center gap-1">Total<StarIcon className="text-accent-star w-4 h-4 mx-1"/>: {starsData.totalEarned}/{starsData.totalTasks}</span>
+                          <span className="text-slate-400 dark:text-slate-700">|</span>
+                          <span className="flex items-center gap-1">Total<StarIcon className="text-amber-500 dark:text-yellow-400 w-4 h-4 mx-1"/>: {starsData.totalEarned}/{starsData.totalTasks}</span>
                       </div>
                   </Widget>
-                  <div className="flex gap-2 pt-2">
-                       <button onClick={handleThemeToggle} title="Toggle Theme" className="p-2 rounded-full text-text-secondary hover:text-text-primary hover:bg-widget-hover transition-colors">
-                          {theme === 'dark' ? <LightbulbIcon className="w-6 h-6"/> : <MoonStarsIcon className="w-6 h-6"/>}
-                      </button>
-                       <button onClick={() => openModal('data-io')} title="Import/Export Data" className="p-2 rounded-full text-text-secondary hover:text-text-primary hover:bg-widget-hover transition-colors">
-                          <DataIcon className="w-6 h-6"/>
-                      </button>
-                      <button onClick={handleReset} title="Reset All Data" className="p-2 rounded-full text-text-secondary hover:text-text-primary hover:bg-widget-hover transition-colors">
-                          <ResetIcon className="w-6 h-6"/>
-                      </button>
+                  <StreakWidget streak={streak}/>
+                  <div className="pt-2">
+                    <SettingsDropdown
+                      theme={theme}
+                      onToggleTheme={toggleTheme}
+                      onTriggerImport={triggerImport}
+                      onExport={handleExport}
+                      onReset={handleReset}
+                    />
                   </div>
               </div>
 
@@ -447,21 +749,34 @@
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                   <div className="lg:col-span-1 space-y-4">
                       <CalendarWidget currentDate={currentDate} onHeaderClick={() => openModal('manage-targets')} />
-                      <div className="flex gap-4">
-                        <StreakWidget streak={streak}/>
-                        <CountdownWidget targets={targets}/>
+                       <div className="flex flex-wrap gap-2">
+                          {activeTargets.length > 0 ? activeTargets.map(target => (
+                              <CountdownItemWidget key={target.id} target={target} onDeleteTarget={deleteTarget} />
+                          )) : (
+                              <Widget onClick={() => openModal('manage-targets')} className="cursor-pointer flex-grow">
+                                  <div className="text-center text-slate-500 dark:text-slate-400 p-4 flex flex-col items-center justify-center h-full min-h-[64px]">
+                                      <PlusIcon className="w-8 h-8 mb-2"/>
+                                      <span>Add a countdown</span>
+                                  </div>
+                              </Widget>
+                          )}
                       </div>
                   </div>
                   <div className="lg:col-span-2">
-                      <NotesWidget notes={notes} onAddClick={() => openModal('add-note')} onNoteClick={(note) => openModal('manage-note', { note })}/>
+                      <NotesWidget 
+                        notes={notes} 
+                        onAddNote={(type) => openModal(type === 'text' ? 'add-text-note' : 'add-link-note')}
+                        onEditNote={(note) => openModal(note.type === 'text' ? 'edit-text-note' : 'edit-link-note', { note })}
+                        onDeleteNote={deleteNote}
+                      />
                   </div>
               </div>
 
               {/* Task Area */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <TaskWidget period={TaskPeriod.Day} tasks={dayTasks} onAreaClick={() => openModal('add-task', {period: TaskPeriod.Day})} onTaskClick={(task) => openModal('manage-task', {task, period: TaskPeriod.Day})}/>
-                  <TaskWidget period={TaskPeriod.Week} tasks={weekTasks} onAreaClick={() => openModal('add-task', {period: TaskPeriod.Week})} onTaskClick={(task) => openModal('manage-task', {task, period: TaskPeriod.Week})} />
-                  <TaskWidget period={TaskPeriod.Month} tasks={monthTasks} onAreaClick={() => openModal('add-task', {period: TaskPeriod.Month})} onTaskClick={(task) => openModal('manage-task', {task, period: TaskPeriod.Month})}/>
+                  <TaskWidget period={TaskPeriod.Day} tasks={dayTasks} onAreaClick={() => openModal('add-task', {period: TaskPeriod.Day})} onCompleteTask={(task) => completeTask(TaskPeriod.Day, task.id)} onRemoveTask={(id) => removeTask(TaskPeriod.Day, id)} />
+                  <TaskWidget period={TaskPeriod.Week} tasks={weekTasks} onAreaClick={() => openModal('add-task', {period: TaskPeriod.Week})} onCompleteTask={(task) => completeTask(TaskPeriod.Week, task.id)} onRemoveTask={(id) => removeTask(TaskPeriod.Week, id)} />
+                  <TaskWidget period={TaskPeriod.Month} tasks={monthTasks} onAreaClick={() => openModal('add-task', {period: TaskPeriod.Month})} onCompleteTask={(task) => completeTask(TaskPeriod.Month, task.id)} onRemoveTask={(id) => removeTask(TaskPeriod.Month, id)} />
               </div>
               
               {/* Modals */}
@@ -469,24 +784,158 @@
                   modal={modal} 
                   closeModal={closeModal} 
                   modalData={modalData}
-                  notes={notes}
                   targets={targets}
                   onAddTask={addTask}
-                  onRemoveTask={removeTask}
-                  onCompleteTask={completeTask}
-                  onAddNote={addNote}
-                  onEditNote={editNote}
+                  onAddOrUpdateNote={addOrUpdateNote}
                   onDeleteNote={deleteNote}
                   onAddTarget={addTarget}
                   onDeleteTarget={deleteTarget}
-                  onExport={handleExport}
-                  onTriggerImport={triggerImport}
               />
           </div>
         );
       }
+      
+      const ManageTargetsModalContent = ({ targets, onAddTarget, onDeleteTarget, onClose }) => {
+          const [label, setLabel] = useState('');
+          const [date, setDate] = useState('');
+          
+          const commonInputClass = "bg-slate-200 dark:bg-slate-900 border border-slate-400 dark:border-slate-700 text-slate-900 dark:text-white rounded p-2 w-full focus:ring-sky-500 dark:focus:ring-sky-500 focus:border-sky-500 dark:focus:border-sky-500 placeholder-slate-500 dark:placeholder-slate-400 transition-colors";
+          const btnClass = "bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600 text-white font-bold py-2 px-4 rounded w-full transition-colors";
 
-      // Render the App
+          const handleSubmit = (e) => {
+              e.preventDefault();
+              onAddTarget(label, date);
+              setLabel('');
+              setDate('');
+          };
+
+          return (
+            <>
+              <div className="flex justify-between items-center mb-4 p-6 pb-0">
+                  <h2 className="text-xl text-slate-900 dark:text-slate-100 font-bold">Manage Countdowns</h2>
+                  <button onClick={onClose} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-2xl leading-none transition-colors">&times;</button>
+              </div>
+              <div className="space-y-6 p-6">
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                      <h3 className="text-lg text-slate-600 dark:text-slate-400">Existing Targets</h3>
+                      {targets.length > 0 ? targets.map(t => (
+                          <div key={t.id} className="flex justify-between items-center bg-slate-200/50 dark:bg-slate-800/50 p-2 rounded">
+                              <div>
+                                  <p className="text-slate-800 dark:text-slate-200">{t.label}</p>
+                                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">{t.date}</p>
+                              </div>
+                              <button onClick={() => onDeleteTarget(t.id)} className="text-red-500 hover:text-red-400 text-xl leading-none transition-colors">&times;</button>
+                          </div>
+                      )) : <p className="text-slate-500 dark:text-slate-400 text-sm">No countdowns set.</p>}
+                  </div>
+                  <form onSubmit={handleSubmit} className="space-y-4 border-t border-slate-300 dark:border-slate-700 pt-4">
+                       <h3 className="text-lg text-slate-600 dark:text-slate-400">Add New Target</h3>
+                       <input type="text" value={label} onChange={e => setLabel(e.target.value)} placeholder="Countdown label" className={commonInputClass} autoFocus/>
+                       <input type="date" value={date} onChange={e => setDate(e.target.value)} className={`${commonInputClass} font-mono`}/>
+                       <button type="submit" className={btnClass}>Set Target</button>
+                  </form>
+              </div>
+            </>
+          );
+      };
+
+      const NotepadModalContent = ({ note, onSave, onDelete, onClose }) => {
+        const [content, setContent] = useState(note?.content || '');
+
+        return (
+            <>
+                <div className="flex justify-between items-center p-4 border-b border-slate-300 dark:border-slate-800 flex-shrink-0">
+                    <h2 className="text-xl text-slate-900 dark:text-slate-100 font-bold">{note ? 'Edit Note' : 'Add Note'}</h2>
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => { onSave(content, note?.id); }} className="p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700" title="Save Note"><SaveIcon/></button>
+                        {note && <button onClick={() => { if(window.confirm('Are you sure?')) { onDelete(note.id); onClose(); } }} className="p-2 rounded-full text-red-600 dark:text-red-500 hover:bg-red-500/10" title="Delete Note"><TrashIcon/></button>}
+                         <button onClick={onClose} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-2xl leading-none transition-colors">&times;</button>
+                    </div>
+                </div>
+                <textarea 
+                    value={content} 
+                    onChange={e => setContent(e.target.value)} 
+                    placeholder="Your thoughts here..."
+                    className="w-full h-full bg-transparent p-4 text-base resize-none focus:outline-none placeholder-slate-500"
+                    autoFocus
+                />
+            </>
+        )
+      };
+
+      // --- Modal Rendering Logic (Helper Component) ---
+      const RenderModals = (props) => {
+          const { modal, closeModal, modalData, targets, onAddTask, onAddOrUpdateNote, onDeleteNote, onAddTarget, onDeleteTarget } = props;
+          
+          const [text, setText] = useState('');
+          
+          useEffect(() => {
+              if (modal) {
+                setText(modalData?.note?.content || '');
+              }
+          }, [modal, modalData]);
+
+          if (!modal) return null;
+
+          const commonInputClass = "bg-slate-200 dark:bg-slate-900 border border-slate-400 dark:border-slate-700 text-slate-900 dark:text-white rounded p-2 w-full focus:ring-sky-500 dark:focus:ring-sky-500 focus:border-sky-500 dark:focus:border-sky-500 placeholder-slate-500 dark:placeholder-slate-400 transition-colors";
+          const btnPrimaryClass = "bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600 text-white font-bold py-2 px-4 rounded w-full transition-colors";
+          
+          if (modal === 'add-task') {
+            return <Modal isOpen={true} onClose={closeModal}>
+                <div className="flex justify-between items-center p-6 pb-4">
+                    <h2 className="text-xl text-slate-900 dark:text-slate-100 font-bold">Add {modalData.period} Task</h2>
+                    <button onClick={closeModal} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-2xl leading-none">&times;</button>
+                </div>
+                <div className="p-6 pt-0">
+                    <form onSubmit={(e) => { e.preventDefault(); onAddTask(modalData.period, text);}} className="space-y-4">
+                        <input type="text" value={text} onChange={e => setText(e.target.value)} placeholder="New task description..." className={commonInputClass} autoFocus/>
+                        <button type="submit" className={btnPrimaryClass}>Add Task</button>
+                    </form>
+                </div>
+            </Modal>;
+          }
+
+          if (modal === 'add-link-note' || modal === 'edit-link-note') {
+              const isEditing = modal === 'edit-link-note';
+              return <Modal isOpen={true} onClose={closeModal}>
+                   <div className="flex justify-between items-center p-6 pb-4">
+                        <h2 className="text-xl text-slate-900 dark:text-slate-100 font-bold">{isEditing ? 'Edit Link' : 'Add Link'}</h2>
+                        <button onClick={closeModal} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-2xl leading-none">&times;</button>
+                    </div>
+                    <div className="p-6 pt-0">
+                        <form onSubmit={e => { e.preventDefault(); onAddOrUpdateNote('link', text, modalData?.note?.id); }} className="space-y-4">
+                            <input type="url" value={text} onChange={e => setText(e.target.value)} placeholder="https://example.com" className={commonInputClass} autoFocus/>
+                            <button type="submit" className={btnPrimaryClass}>{isEditing ? 'Update Link' : 'Add Link'}</button>
+                        </form>
+                    </div>
+              </Modal>;
+          }
+
+          if (modal === 'add-text-note' || modal === 'edit-text-note') {
+              return <Modal isOpen={true} onClose={closeModal} size="fullscreen">
+                <NotepadModalContent 
+                    note={modalData?.note} 
+                    onSave={(content, id) => onAddOrUpdateNote('text', content, id)}
+                    onDelete={onDeleteNote}
+                    onClose={closeModal}
+                />
+              </Modal>;
+          }
+          
+          if (modal === 'manage-targets') {
+              return <Modal isOpen={true} onClose={closeModal}>
+                <ManageTargetsModalContent 
+                    targets={targets} 
+                    onAddTarget={onAddTarget} 
+                    onDeleteTarget={onDeleteTarget} 
+                    onClose={closeModal}
+                />
+              </Modal>;
+          }
+
+          return null;
+      };
+
       const rootElement = document.getElementById('root');
       const root = ReactDOM.createRoot(rootElement);
       root.render(
@@ -495,5 +944,6 @@
         </StrictMode>
       );
     </script>
-  </body>
+  <script type="module" src="/index.tsx"></script>
+</body>
 </html>

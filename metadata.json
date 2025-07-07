@@ -1,0 +1,6 @@
+{
+  "name": "Zenith Task Tracker",
+  "description": "A modern, terminal-inspired task management application to track your daily, weekly, and monthly goals, maintain streaks, and stay organized. All data is stored locally in your browser.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
