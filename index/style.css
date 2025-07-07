@@ -1,0 +1,385 @@
+/* Base styles - these will be overridden by theme-specific variables */
+body {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Light Theme Variables (adjusted for dark aesthetic) */
+:root {
+    --light-bg-color: #f0f2f5; /* Lighter background */
+    --light-text-color: #333; /* Darker text */
+    --light-widget-bg: #ffffff; /* White widgets */
+    --light-widget-border: #e0e0e0; /* Light border */
+    --light-widget-hover-bg: #f8f8f8; /* Slightly off-white hover */
+    --light-shadow: rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    --light-input-bg: #f9f9f9; /* Light input background */
+    --light-input-border: #ccc; /* Light input border */
+    --light-button-bg: #4f46e5; /* Primary button color */
+    --light-button-hover-bg: #4338ca; /* Darker hover */
+    --light-danger-bg: #dc2626; /* Red for danger */
+    --light-danger-hover-bg: #c21e1e;
+    --light-success-bg: #16a34a; /* Green for success */
+    --light-success-hover-bg: #128a3f;
+    --light-secondary-button-bg: #e2e8f0; /* Light secondary button */
+    --light-secondary-button-text: #333;
+    --light-progress-bar-bg: #e5e7eb; /* Light progress bar background */
+    --light-progress-bar-fill: #60a5fa; /* Blue progress bar fill */
+    --light-divider-color: #e0e0e0;
+    --light-placeholder-color: #999;
+    --light-completed-text: #888;
+    --light-link-color: #007bff; /* Blue for links */
+    --light-link-hover-color: #0056b3;
+}
+
+/* Dark Theme Variables (original-like) */
+[data-theme="dark"] {
+    --bg-color: #1a1a2e; /* Darker background */
+    --text-color: #e0e0e0; /* Light text */
+    --widget-bg: #2a2a4a; /* Darker widgets */
+    --widget-border: #4a4a6a; /* Dark border */
+    --widget-hover-bg: #3a3a5a; /* Slightly lighter hover */
+    --shadow: rgba(0, 0, 0, 0.3); /* Pronounced shadow */
+    --input-bg: #1e1e3a; /* Dark input background */
+    --input-border: #3a3a5a; /* Dark input border */
+    --button-bg: #4f46e5; /* Primary button color */
+    --button-hover-bg: #4338ca; /* Darker hover */
+    --danger-bg: #dc2626; /* Red for danger */
+    --danger-hover-bg: #c21e1e;
+    --success-bg: #16a34a; /* Green for success */
+    --success-hover-bg: #128a3f;
+    --secondary-button-bg: #475569; /* Slate secondary button */
+    --secondary-button-text: #e0e0e0;
+    --progress-bar-bg: #334155; /* Dark progress bar background */
+    --progress-bar-fill: #60a5fa; /* Blue progress bar fill */
+    --divider-color: #475569;
+    --placeholder-color: #94a3b8;
+    --completed-text: #64748b;
+    --link-color: #60a5fa; /* Light blue for links */
+    --link-hover-color: #3b82f6;
+}
+
+/* Apply light theme variables */
+[data-theme="light"] {
+    --bg-color: var(--light-bg-color);
+    --text-color: var(--light-text-color);
+    --widget-bg: var(--light-widget-bg);
+    --widget-border: var(--light-widget-border);
+    --widget-hover-bg: var(--light-widget-hover-bg);
+    --shadow: var(--light-shadow);
+    --input-bg: var(--light-input-bg);
+    --input-border: var(--light-input-border);
+    --button-bg: var(--light-button-bg);
+    --button-hover-bg: var(--light-button-hover-bg);
+    --danger-bg: var(--light-danger-bg);
+    --danger-hover-bg: var(--light-danger-hover-bg);
+    --success-bg: var(--light-success-bg);
+    --success-hover-bg: var(--light-success-hover-bg);
+    --secondary-button-bg: var(--light-secondary-button-bg);
+    --secondary-button-text: var(--light-secondary-button-text);
+    --progress-bar-bg: var(--light-progress-bar-bg);
+    --progress-bar-fill: var(--light-progress-bar-fill);
+    --divider-color: var(--light-divider-color);
+    --placeholder-color: var(--light-placeholder-color);
+    --completed-text: var(--light-completed-text);
+    --link-color: var(--light-link-color);
+    --link-hover-color: var(--light-link-hover-color);
+}
+
+/* General styles using variables */
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+.bg-black { /* This will be overridden by --bg-color */
+    background-color: var(--bg-color);
+}
+
+.text-slate-300 { /* This will be overridden by --text-color */
+    color: var(--text-color);
+}
+
+.bg-slate-900\/80 { /* Modal background */
+    background-color: var(--widget-bg); /* Use widget background for modal */
+    border: 1px solid var(--widget-border);
+}
+
+.text-slate-100 { /* Modal title */
+    color: var(--text-color);
+}
+
+.text-slate-400 { /* Icon colors, secondary text */
+    color: var(--text-color);
+}
+
+.hover\:text-white:hover { /* Hover for icons */
+    color: var(--text-color);
+}
+
+.hover\:bg-white\/10:hover { /* Hover for icon buttons */
+    background-color: rgba(var(--text-rgb-main), 0.1);
+}
+
+/* Define RGB values for main text color for dynamic rgba */
+[data-theme="light"] { --text-rgb-main: 51, 51, 51; } /* #333 */
+[data-theme="dark"] { --text-rgb-main: 224, 224, 224; } /* #e0e0e0 */
+
+
+.bg-transparent.border.border-white\/20 { /* Widget border */
+    border-color: var(--widget-border);
+    background-color: var(--widget-bg);
+}
+
+.hover\:border-white\/60:hover { /* Widget hover border */
+    border-color: rgba(var(--text-rgb-main), 0.6);
+}
+
+.hover\:shadow-\[0_0_20px_rgba\(255,255,255,0\.1\),0_0_40px_rgba\(255,255,255,0\.05\)\]:hover { /* Widget hover shadow */
+    box-shadow: 0 0 20px rgba(var(--text-rgb-main), 0.1), 0 0 40px rgba(var(--text-rgb-main), 0.05);
+}
+
+.bg-white\/10 { /* Progress bar background */
+    background-color: var(--progress-bar-bg);
+}
+
+.bg-slate-300 { /* Progress bar fill */
+    background-color: var(--progress-bar-fill);
+}
+
+.text-black.mix-blend-screen { /* Progress bar text */
+    color: var(--text-color); /* Keep text visible */
+    mix-blend-mode: normal; /* Disable mix-blend-screen for light theme */
+}
+
+[data-theme="light"] .text-black.mix-blend-screen {
+    color: #000; /* Ensure black text on light progress bar */
+}
+
+.text-slate-500 { /* Placeholder text, completed tasks */
+    color: var(--placeholder-color);
+}
+
+.bg-slate-800 { /* Input background */
+    background-color: var(--input-bg);
+}
+
+.border-slate-700 { /* Input border */
+    border-color: var(--input-border);
+}
+
+.placeholder-slate-500::placeholder { /* Input placeholder */
+    color: var(--placeholder-color);
+}
+
+.focus\:ring-slate-500:focus { /* Input focus ring */
+    --tw-ring-color: var(--button-bg);
+}
+
+.focus\:border-slate-500:focus { /* Input focus border */
+    border-color: var(--button-bg);
+}
+
+.bg-slate-700 { /* Button background */
+    background-color: var(--button-bg);
+}
+
+.hover\:bg-slate-600:hover { /* Button hover */
+    background-color: var(--button-hover-bg);
+}
+
+.bg-green-600 { /* Mark complete button */
+    background-color: var(--success-bg);
+}
+
+.hover\:bg-green-700:hover {
+    background-color: var(--success-hover-bg);
+}
+
+.bg-red-600 { /* Delete button */
+    background-color: var(--danger-bg);
+}
+
+.hover\:bg-red-700:hover {
+    background-color: var(--danger-hover-bg);
+}
+
+.bg-slate-800\/50 { /* Managed task/note background */
+    background-color: var(--input-bg);
+}
+
+.border-t.border-slate-700 { /* Divider in manage targets */
+    border-color: var(--divider-color);
+}
+
+.text-yellow-400 { /* Star icon, streak icon */
+    color: #facc15; /* Keep yellow consistent */
+}
+
+.text-sky-400 { /* Week icon */
+    color: #38bdf8; /* Keep sky blue consistent */
+}
+
+.text-indigo-400 { /* Month icon */
+    color: #818cf8; /* Keep indigo consistent */
+}
+
+.text-cyan-400 { /* Link icon */
+    color: var(--link-color);
+}
+
+.hover\:underline:hover {
+    text-decoration-color: var(--link-hover-color);
+}
+
+.line-through.text-slate-500 {
+    color: var(--completed-text);
+}
+
+/* Specific styles for the theme toggle button */
+.theme-toggle-button {
+    background-color: var(--widget-bg);
+    border: 1px solid var(--widget-border);
+    color: var(--text-color);
+    padding: 0.5rem;
+    border-radius: 9999px; /* Full rounded */
+    cursor: pointer;
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem; /* Fixed width */
+    height: 2.5rem; /* Fixed height */
+    box-shadow: var(--shadow);
+}
+
+.theme-toggle-button:hover {
+    background-color: var(--widget-hover-bg);
+    border-color: rgba(var(--text-rgb-main), 0.6);
+}
+
+.theme-toggle-button svg {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+/* User ID display */
+.user-id-display {
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--text-color);
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    word-break: break-all;
+    font-family: 'monospace';
+}
+
+/* Ensure consistent padding/margins */
+.p-2 { padding: 0.5rem; }
+.sm\:p-4 { padding: 1rem; }
+.lg\:p-6 { padding: 1.5rem; }
+.space-y-4 > *:not([hidden]) ~ *:not([hidden]) { margin-top: 1rem; }
+.gap-4 > *:not([hidden]) ~ *:not([hidden]) { margin-left: 1rem; }
+.max-w-7xl { max-width: 80rem; }
+.mx-auto { margin-left: auto; margin-right: auto; }
+.flex { display: flex; }
+.justify-between { justify-content: space-between; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.flex-wrap { flex-wrap: wrap; }
+.gap-x-4 > *:not([hidden]) ~ *:not([hidden]) { margin-left: 1rem; }
+.gap-y-2 > *:not([hidden]) ~ *:not([hidden]) { margin-top: 0.5rem; }
+.text-md { font-size: 1rem; }
+.font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+.w-full { width: 100%; }
+.grid { display: grid; }
+.grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+.lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.lg\:col-span-1 { grid-column: span 1 / span 1; }
+.lg\:col-span-2 { grid-column: span 2 / span 2; }
+.min-h-screen { min-height: 100vh; }
+.rounded-lg { border-radius: 0.5rem; }
+.p-4 { padding: 1rem; }
+.transition-all { transition-property: all; }
+.duration-300 { transition-duration: 0.3s; }
+.ease-out { transition-timing-function: cubic-bezier(0, 0, 0.2, 1); }
+.flex-1 { flex: 1 1 0%; }
+.min-w-\[280px\] { min-width: 280px; }
+.flex-col { flex-direction: column; }
+.gap-2 { gap: 0.5rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.text-lg { font-size: 1.125rem; }
+.font-bold { font-weight: 700; }
+.text-slate-200 { color: var(--text-color); }
+.text-sm { font-size: 0.875rem; }
+.space-y-1 > *:not([hidden]) ~ *:not([hidden]) { margin-top: 0.25rem; }
+.h-24 { height: 6rem; }
+.overflow-y-auto { overflow-y: auto; }
+.pr-2 { padding-right: 0.5rem; }
+.flex-grow { flex-grow: 1; }
+.p-1 { padding: 0.25rem; }
+.rounded { border-radius: 0.25rem; }
+.line-through { text-decoration-line: line-through; }
+.cursor-default { cursor: default; }
+.cursor-pointer { cursor: pointer; }
+.w-full { width: 100%; }
+.h-4 { height: 1rem; }
+.my-1 { margin-top: 0.25rem; margin-bottom: 0.25rem; }
+.relative { position: relative; }
+.overflow-hidden { overflow: hidden; }
+.text-xs { font-size: 0.75rem; }
+.h-full { height: 100%; }
+.inset-0 { inset: 0px; }
+.text-center { text-align: center; }
+.grid-cols-7 { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.gap-1 { gap: 0.25rem; }
+.w-8 { width: 2rem; }
+.h-8 { height: 2rem; }
+.rounded-full { border-radius: 9999px; }
+.bg-white { background-color: #fff; }
+.text-black { color: #000; }
+.justify-between { justify-content: space-between; }
+.h-\[220px\] { height: 220px; }
+.space-y-2 > *:not([hidden]) ~ *:not([hidden]) { margin-top: 0.5rem; }
+.items-start { align-items: flex-start; }
+.flex-shrink-0 { flex-shrink: 0; }
+.w-4 { width: 1rem; }
+.h-4 { height: 1rem; }
+.mt-1 { margin-top: 0.25rem; }
+.break-all { word-break: break-all; }
+.whitespace-pre-wrap { white-space: pre-wrap; }
+.w-\[200px\] { width: 200px; }
+.my-3 { margin-top: 0.75rem; margin-bottom: 0.75rem; }
+.h-2 { height: 0.5rem; }
+.flex-col { flex-direction: column; }
+.gap-3 { gap: 0.75rem; }
+.h-\[92px\] { height: 92px; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pr-2 { padding-right: 0.5rem; }
+.fixed { position: fixed; }
+.inset-0 { inset: 0px; }
+.bg-black { background-color: #000; }
+.bg-opacity-80 { background-color: rgba(0, 0, 0, 0.8); }
+.justify-center { justify-content: center; }
+.z-50 { z-index: 50; }
+.backdrop-blur-sm { backdrop-filter: blur(4px); }
+.shadow-xl { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); }
+.max-w-md { max-width: 28rem; }
+.p-6 { padding: 1.5rem; }
+.m-4 { margin: 1rem; }
+.mb-4 { margin-bottom: 1rem; }
+.text-xl { font-size: 1.25rem; }
+.leading-none { line-height: 1; }
+.space-y-4 > *:not([hidden]) ~ *:not([hidden]) { margin-top: 1rem; }
+.p-2 { padding: 0.5rem; }
+.w-full { width: 100%; }
+.focus\:ring-slate-500:focus { --tw-ring-color: #64748b; }
+.focus\:border-slate-500:focus { border-color: #64748b; }
+.py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+.px-4 { padding-left: 1rem; padding-right: 1rem; }
+.w-1\/2 { width: 50%; }
+.h-32 { height: 8rem; }
+.max-h-48 { max-height: 12rem; }
+.pt-2 { padding-top: 0.5rem; }
+.py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+.px-4 { padding-left: 1rem; padding-right: 1rem; }
+.hidden { display: none; }
